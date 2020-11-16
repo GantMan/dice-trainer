@@ -81,29 +81,19 @@ const doLinearPrediction = async () => {
     },
   };
 
-  // console.log("starting fit");
-  // await model.fit(stackedX, stackedY, {
-  //   epochs: 100,
-  //   shuffle: true,
-  //   batchSize: 32,
-  //   callbacks: printCallback,
-  // });
+  console.log("starting fit");
+  await model.fit(stackedX, stackedY, {
+    epochs: 100,
+    shuffle: true,
+    batchSize: 32,
+    callbacks: printCallback,
+  });
 
-  const fizzBuzzResult = [];
-  // for (let x = 1; x < 100; x++) {
-  //   const singlePredictInput = numToBinTensor(x).reshape([1, 10]);
-  //   const resultData = await model.predict(singlePredictInput).data();
-  //   // grab Max index
-  //   const winner = resultData.indexOf(Math.max(...resultData));
-  //   const result = [x, "fizz", "buzz", "fizzbuzz"][winner];
-  //   // console.log(result);
-  //   fizzBuzzResult.push(result);
-  //   singlePredictInput.dispose(); // manual dispose
-  // }
+  // DO A TEST HERE????????
 
   // for save button
   window.model = model;
-  return fizzBuzzResult.join(", ");
+  return "DONE!"
 };
 
 class App extends React.Component {
@@ -112,22 +102,25 @@ class App extends React.Component {
   };
 
   componentDidMount() {
-    // doLinearPrediction().then((result) =>
-    //   this.setState({ simplePredict: result })
-    // );
+    doLinearPrediction().then((result) =>
+      this.setState({ simplePredict: result })
+    );
+    console.log(stackedX.shape)
+    console.log(stackedY.shape)
   }
 
   render() {
     return (
       <div className="App">
-        <h1>Dice Trainer</h1>
+        <h1>Dice Trainer 🎲</h1>
         <img
-          src="https://gantlaborde.com/wp-content/uploads/2020/04/ess70.png"
+          src="/ess70.png"
           width="150"
         />
         <h3>
           <a href="http://gantlaborde.com/">By Gant Laborde</a>
         </h3>
+        <hr/>
         <h2>{this.state.simplePredict}</h2>
         <button
           onClick={async () => {
