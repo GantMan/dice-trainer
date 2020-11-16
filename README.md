@@ -1,2 +1,3 @@
 # dice-trainer
-Created with CodeSandbox
+
+Essential dice training perceptron

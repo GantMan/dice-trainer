@@ -5,23 +5,41 @@ import * as tf from "@tensorflow/tfjs";
 import "./styles.css";
 
 const inputShape = [12, 12, 1];
-// require("./dice_data.json");
-
-// cleanup if running too many at once
-const preExistingBackend = tf.getBackend();
-if (preExistingBackend) tf.removeBackend(preExistingBackend);
+const diceData = require("./dice_data.json").dice;
 
 // Wrap in a tidy for memory
-// const [stackedX, stackedY] = tf.tidy(() => {
-//   let xs = [];
-//   let ys = [];
-//   // for (let i = 1; i <= 1000; i++) {
-//   //   xs.push(numToBinTensor(i));
-//   //   ys.push(fizzbuzzEncoder(i));
-//   // }
+const [stackedX, stackedY] = tf.tidy(() => {
+  // Build a stacked tensor from JSON
+  const xs = tf
+    .concat([
+      diceData.one,
+      diceData.two,
+      diceData.twor,
+      diceData.three,
+      diceData.threer,
+      diceData.four,
+      diceData.five,
+      diceData.six,
+      diceData.sixr,
+    ])
+    .expandDims(3);
 
-//   return [tf.stack(xs), tf.stack(ys)];
-// });
+  // Now the answers to their corresponding index
+  const combo = [].concat(
+    new Array(diceData.one.length).fill(0),
+    new Array(diceData.two.length).fill(1),
+    new Array(diceData.twor.length).fill(2),
+    new Array(diceData.three.length).fill(3),
+    new Array(diceData.threer.length).fill(4),
+    new Array(diceData.four.length).fill(5),
+    new Array(diceData.five.length).fill(6),
+    new Array(diceData.six.length).fill(7),
+    new Array(diceData.sixr.length).fill(8)
+  );
+  const ys = tf.oneHot(combo, 9);
+
+  return [xs, ys];
+});
 
 const doLinearPrediction = async () => {
   const model = tf.sequential();
@@ -30,22 +48,22 @@ const doLinearPrediction = async () => {
     tf.layers.dense({
       units: 64,
       inputShape: inputShape,
-      activation: "relu"
+      activation: "relu",
     })
   );
 
   model.add(
     tf.layers.dense({
       units: 8,
-      activation: "relu"
+      activation: "relu",
     })
   );
 
   model.add(
     tf.layers.dense({
-      units: 4,
+      units: 9,
       kernelInitializer: "varianceScaling",
-      activation: "softmax"
+      activation: "softmax",
     })
   );
 
@@ -53,49 +71,35 @@ const doLinearPrediction = async () => {
   model.compile({
     optimizer: tf.train.adam(learningRate),
     loss: "categoricalCrossentropy",
-    metrics: ["accuracy"]
+    metrics: ["accuracy"],
   });
 
   // Make loss callback
   const printCallback = {
     onEpochEnd: (epoch, log) => {
       console.log(log);
-    }
+    },
   };
 
-  console.log("starting fit");
-  await model.fit(stackedX, stackedY, {
-    epochs: 100,
-    shuffle: true,
-    batchSize: 32,
-    callbacks: printCallback
-  });
-
-  console.log("done");
-
-  // ******************************
-  // Debug check
-  // *****************************
-  // const next = tf.stack([
-  //   numToBinTensor(1),
-  //   numToBinTensor(3),
-  //   numToBinTensor(5),
-  //   numToBinTensor(15)
-  // ]);
-  // const answer = model.predict(next);
-  // answer.print();
+  // console.log("starting fit");
+  // await model.fit(stackedX, stackedY, {
+  //   epochs: 100,
+  //   shuffle: true,
+  //   batchSize: 32,
+  //   callbacks: printCallback,
+  // });
 
   const fizzBuzzResult = [];
-  for (let x = 1; x < 100; x++) {
-    const singlePredictInput = numToBinTensor(x).reshape([1, 10]);
-    const resultData = await model.predict(singlePredictInput).data();
-    // grab Max index
-    const winner = resultData.indexOf(Math.max(...resultData));
-    const result = [x, "fizz", "buzz", "fizzbuzz"][winner];
-    // console.log(result);
-    fizzBuzzResult.push(result);
-    singlePredictInput.dispose(); // manual dispose
-  }
+  // for (let x = 1; x < 100; x++) {
+  //   const singlePredictInput = numToBinTensor(x).reshape([1, 10]);
+  //   const resultData = await model.predict(singlePredictInput).data();
+  //   // grab Max index
+  //   const winner = resultData.indexOf(Math.max(...resultData));
+  //   const result = [x, "fizz", "buzz", "fizzbuzz"][winner];
+  //   // console.log(result);
+  //   fizzBuzzResult.push(result);
+  //   singlePredictInput.dispose(); // manual dispose
+  // }
 
   // for save button
   window.model = model;
@@ -104,11 +108,10 @@ const doLinearPrediction = async () => {
 
 class App extends React.Component {
   state = {
-    simplePredict: "training model..."
+    simplePredict: "training model...",
   };
 
   componentDidMount() {
-    require("./dice_data.json");
     // doLinearPrediction().then((result) =>
     //   this.setState({ simplePredict: result })
     // );
@@ -117,8 +120,11 @@ class App extends React.Component {
   render() {
     return (
       <div className="App">
-        <h1>FizzBuzz ML</h1>
-        <img src="https://i.imgur.com/YrUqtM0.png" width="150" />
+        <h1>Dice Trainer</h1>
+        <img
+          src="https://gantlaborde.com/wp-content/uploads/2020/04/ess70.png"
+          width="150"
+        />
         <h3>
           <a href="http://gantlaborde.com/">By Gant Laborde</a>
         </h3>
@@ -126,7 +132,7 @@ class App extends React.Component {
         <button
           onClick={async () => {
             if (!window.model) return;
-            await window.model.save("downloads://fizzbuzz-model");
+            await window.model.save("downloads://dice-model");
           }}
         >
           Download Resulting Model
